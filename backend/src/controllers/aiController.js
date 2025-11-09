@@ -7,7 +7,7 @@ export const getAIRecommendations = async (req, res) => {
     if (!currentUser || !allUsers) {
       return res.status(400).json({ message: "Missing data for AI recommendations" });
     }
-
+ 
     const response = await axios.post(
       "https://api.groq.com/openai/v1/chat/completions",
       {
