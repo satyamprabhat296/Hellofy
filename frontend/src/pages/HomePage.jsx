@@ -530,7 +530,6 @@
 // export default HomePage;
 
 
-
 import React, { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -539,7 +538,7 @@ import {
   getOutgoingFriendReqs,
   sendFriendRequest,
   dismissSuggestedUser,
-  getAIRecommendations, // 🧠 updated
+  getAIRecommendations,
 } from "../lib/api";
 import {
   CheckCircleIcon,
@@ -548,13 +547,15 @@ import {
   UserPlusIcon,
   CodeIcon,
   GlobeIcon,
-  GithubIcon,
+  Github,
   XCircleIcon,
   SparklesIcon,
 } from "lucide-react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import FriendCard from "../components/FriendCard";
 import NoFriendsFound from "../components/NoFriendsFound";
+
+/* -------------------- Language Badge Colors -------------------- */
 
 const LANGUAGE_COLORS = {
   javascript: "bg-yellow-400 text-black",
@@ -577,12 +578,17 @@ const getLangBadgeClass = (lang) => {
   return LANGUAGE_COLORS[lang.toLowerCase()] || LANGUAGE_COLORS.default;
 };
 
+/* ---------------------------- Component ---------------------------- */
+
 const HomePage = () => {
   const queryClient = useQueryClient();
+
   const [outgoingRequestsIds, setOutgoingRequestsIds] = useState(new Set());
   const [aiSuggestions, setAISuggestions] = useState([]);
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiError, setAIError] = useState("");
+
+  /* ---------------------------- Queries ---------------------------- */
 
   const { data: friends = [], isLoading: loadingFriends } = useQuery({
     queryKey: ["friends"],
@@ -599,6 +605,8 @@ const HomePage = () => {
     queryFn: getOutgoingFriendReqs,
   });
 
+  /* --------------------------- Mutations --------------------------- */
+
   const { mutate: sendRequestMutation, isPending } = useMutation({
     mutationFn: sendFriendRequest,
     onSuccess: () =>
@@ -608,33 +616,33 @@ const HomePage = () => {
   const { mutate: dismissUserMutation } = useMutation({
     mutationFn: dismissSuggestedUser,
     onSuccess: (_, dismissedUserId) => {
-      queryClient.setQueryData(["users"], (oldData) =>
-        oldData ? oldData.filter((u) => u._id !== dismissedUserId) : []
+      queryClient.setQueryData(["users"], (oldData = []) =>
+        oldData.filter((u) => u._id !== dismissedUserId)
       );
     },
   });
 
+  /* ---------------------------- Effects ---------------------------- */
+
   useEffect(() => {
     const outgoingIds = new Set();
-    if (outgoingFriendReqs?.length > 0) {
-      outgoingFriendReqs.forEach((req) => outgoingIds.add(req.recipient._id));
-      setOutgoingRequestsIds(outgoingIds);
-    }
+    outgoingFriendReqs?.forEach((req) =>
+      outgoingIds.add(req.recipient._id)
+    );
+    setOutgoingRequestsIds(outgoingIds);
   }, [outgoingFriendReqs]);
 
-  // 🧠 Fetch AI friend suggestions (Groq integrated)
+  /* ---------------------- AI Recommendations ---------------------- */
+
   const handleAISuggestions = async () => {
     setAIError("");
     setLoadingAI(true);
 
     try {
       const res = await getAIRecommendations();
-
-      if (!res || res.length === 0) {
+      setAISuggestions(res?.length ? res : []);
+      if (!res?.length) {
         setAIError("No AI-based recommendations available right now.");
-        setAISuggestions([]);
-      } else {
-        setAISuggestions(res);
       }
     } catch (err) {
       console.error("AI Recommendation Error:", err);
@@ -644,10 +652,13 @@ const HomePage = () => {
     }
   };
 
+  /* ---------------------------- Render ---------------------------- */
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="container mx-auto space-y-10">
-        {/* FRIENDS SECTION */}
+
+        {/* ================= FRIENDS SECTION ================= */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
             Your Coding Partners
@@ -672,44 +683,39 @@ const HomePage = () => {
           </div>
         )}
 
-        {/* RECOMMENDED USERS SECTION */}
+        {/* ================= RECOMMENDATIONS ================= */}
         <section>
-          <div className="mb-6 sm:mb-8">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                  Find New Programming Buddies
-                </h2>
-                <p className="opacity-70">
-                  Connect with developers to learn and teach languages together.
-                </p>
-              </div>
-
-              {/* ✨ AI Suggestion Button */}
-              <button
-                onClick={handleAISuggestions}
-                className="btn btn-accent btn-sm flex items-center gap-2"
-                disabled={loadingAI}
-              >
-                {loadingAI ? (
-                  <>
-                    <span className="loading loading-spinner loading-xs"></span>
-                    Getting AI Suggestions...
-                  </>
-                ) : (
-                  <>
-                    <SparklesIcon className="size-4" /> Get AI Suggestions
-                  </>
-                )}
-              </button>
+          <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                Find New Programming Buddies
+              </h2>
+              <p className="opacity-70">
+                Connect with developers to learn and teach languages together.
+              </p>
             </div>
+
+            <button
+              onClick={handleAISuggestions}
+              className="btn btn-accent btn-sm flex items-center gap-2"
+              disabled={loadingAI}
+            >
+              {loadingAI ? (
+                <>
+                  <span className="loading loading-spinner loading-xs" />
+                  Getting AI Suggestions...
+                </>
+              ) : (
+                <>
+                  <SparklesIcon className="size-4" />
+                  Get AI Suggestions
+                </>
+              )}
+            </button>
           </div>
 
-          {/* 🧠 AI Suggestions Section */}
           {aiError && (
-            <div className="alert alert-error text-sm mb-4">
-              {aiError}
-            </div>
+            <div className="alert alert-error text-sm mb-4">{aiError}</div>
           )}
 
           {aiSuggestions.length > 0 && (
@@ -725,7 +731,6 @@ const HomePage = () => {
             </div>
           )}
 
-          {/* NORMAL RECOMMENDATIONS */}
           {loadingUsers ? (
             <div className="flex justify-center py-12">
               <span className="loading loading-spinner loading-lg" />
@@ -735,7 +740,7 @@ const HomePage = () => {
               <h3 className="font-semibold text-lg mb-2">
                 No recommendations available
               </h3>
-              <p className="text-base-content opacity-70">
+              <p className="opacity-70">
                 Check back later for new coding partners!
               </p>
             </div>
@@ -743,12 +748,15 @@ const HomePage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {recommendedUsers.map((user) => {
                 const hasRequestBeenSent = outgoingRequestsIds.has(user._id);
+
                 return (
                   <div
                     key={user._id}
-                    className="card bg-base-200 hover:shadow-lg transition-all duration-300"
+                    className="card bg-base-200 hover:shadow-lg transition-all"
                   >
                     <div className="card-body p-5 space-y-4">
+
+                      {/* Header */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="avatar size-16 rounded-full">
@@ -771,22 +779,18 @@ const HomePage = () => {
                           </div>
                         </div>
 
-                        {/* Dismiss Button */}
                         <button
                           onClick={() => dismissUserMutation(user._id)}
                           className="btn btn-ghost btn-sm text-error"
-                          title="Dismiss suggestion"
                         >
                           <XCircleIcon className="size-5" />
                         </button>
                       </div>
 
-                      {/* LANGUAGES */}
+                      {/* Languages */}
                       {user.languagesToTeach?.length > 0 && (
                         <div>
-                          <p className="text-sm font-medium opacity-80 mb-1">
-                            🧑‍🏫 Teaches:
-                          </p>
+                          <p className="text-sm font-medium mb-1">🧑‍🏫 Teaches:</p>
                           <div className="flex flex-wrap gap-2">
                             {user.languagesToTeach.map((lang) => (
                               <span
@@ -804,14 +808,12 @@ const HomePage = () => {
 
                       {user.languagesToLearn?.length > 0 && (
                         <div>
-                          <p className="text-sm font-medium opacity-80 mb-1">
-                            📚 Learning:
-                          </p>
+                          <p className="text-sm font-medium mb-1">📚 Learning:</p>
                           <div className="flex flex-wrap gap-2">
                             {user.languagesToLearn.map((lang) => (
                               <span
                                 key={`learn-${lang}`}
-                                className={`px-2 py-1 rounded-full text-xs font-semibold border border-base-300 ${getLangBadgeClass(
+                                className={`px-2 py-1 rounded-full text-xs font-semibold border ${getLangBadgeClass(
                                   lang
                                 )}`}
                               >
@@ -824,9 +826,7 @@ const HomePage = () => {
 
                       {user.techStack?.length > 0 && (
                         <div>
-                          <p className="text-sm font-medium opacity-80 mb-1">
-                            💻 Tech Stack:
-                          </p>
+                          <p className="text-sm font-medium mb-1">💻 Tech Stack:</p>
                           <div className="flex flex-wrap gap-2">
                             {user.techStack.map((tech) => (
                               <span
@@ -841,11 +841,11 @@ const HomePage = () => {
                       )}
 
                       {user.bio && (
-                        <p className="text-sm opacity-70 mt-2">{user.bio}</p>
+                        <p className="text-sm opacity-70">{user.bio}</p>
                       )}
 
-                      {/* LINKS */}
-                      <div className="flex flex-wrap items-center gap-3 mt-2 text-sm">
+                      {/* Links */}
+                      <div className="flex flex-wrap gap-3 text-sm">
                         {user.github && (
                           <a
                             href={user.github}
@@ -853,7 +853,8 @@ const HomePage = () => {
                             rel="noopener noreferrer"
                             className="flex items-center gap-1 text-blue-400 hover:underline"
                           >
-                            <GithubIcon className="size-4" /> GitHub
+                            <Github className="size-4" />
+                            GitHub
                           </a>
                         )}
                         {user.portfolio && (
@@ -863,7 +864,8 @@ const HomePage = () => {
                             rel="noopener noreferrer"
                             className="flex items-center gap-1 text-yellow-400 hover:underline"
                           >
-                            <CodeIcon className="size-4" /> Portfolio
+                            <CodeIcon className="size-4" />
+                            Portfolio
                           </a>
                         )}
                         {user.website && (
@@ -873,15 +875,18 @@ const HomePage = () => {
                             rel="noopener noreferrer"
                             className="flex items-center gap-1 text-green-400 hover:underline"
                           >
-                            <GlobeIcon className="size-4" /> Website
+                            <GlobeIcon className="size-4" />
+                            Website
                           </a>
                         )}
                       </div>
 
-                      {/* CONNECT BUTTON */}
+                      {/* Connect Button */}
                       <button
                         className={`btn w-full mt-2 ${
-                          hasRequestBeenSent ? "btn-disabled" : "btn-primary"
+                          hasRequestBeenSent
+                            ? "btn-disabled"
+                            : "btn-primary"
                         }`}
                         onClick={() => sendRequestMutation(user._id)}
                         disabled={hasRequestBeenSent || isPending}
@@ -898,6 +903,7 @@ const HomePage = () => {
                           </>
                         )}
                       </button>
+
                     </div>
                   </div>
                 );
