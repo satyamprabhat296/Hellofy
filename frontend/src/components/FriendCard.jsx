@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { LANGUAGE_TO_FLAG } from "../constants";
+import { Code2Icon, MessageCircleIcon } from "lucide-react";
 
 const FriendCard = ({ friend }) => {
   return (
@@ -13,6 +14,7 @@ const FriendCard = ({ friend }) => {
           <h3 className="font-semibold truncate">{friend.fullName}</h3>
         </div>
 
+        {/* LANGUAGE BADGES */}
         <div className="flex flex-wrap gap-1.5 mb-3">
           <span className="badge badge-secondary text-xs">
             {getLanguageFlag(friend.nativeLanguage)}
@@ -24,13 +26,29 @@ const FriendCard = ({ friend }) => {
           </span>
         </div>
 
-        <Link to={`/chat/${friend._id}`} className="btn btn-outline w-full">
-          Message
-        </Link>
+        {/* ACTION BUTTONS */}
+        <div className="flex gap-2 mt-2">
+          <Link
+            to={`/chat/${friend._id}`}
+            className="btn btn-outline btn-sm flex-1 flex items-center justify-center gap-2"
+          >
+            <MessageCircleIcon className="size-4" />
+            Message
+          </Link>
+
+          <Link
+            to={`/pair-coding/${friend._id}`}
+            className="btn btn-accent btn-sm flex-1 flex items-center justify-center gap-2"
+          >
+            <Code2Icon className="size-4" />
+            Pair Code
+          </Link>
+        </div>
       </div>
     </div>
   );
 };
+
 export default FriendCard;
 
 export function getLanguageFlag(language) {
