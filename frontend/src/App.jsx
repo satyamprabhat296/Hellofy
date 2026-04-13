@@ -1,5 +1,4 @@
-import { Navigate, Route, Routes } from "react-router";
-
+import { Navigate, Route, Routes } from "react-router-dom";
 import HomePage from "./pages/HomePage.jsx";
 import SignUpPage from "./pages/SignUpPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
@@ -7,13 +6,17 @@ import NotificationsPage from "./pages/NotificationsPage.jsx";
 import CallPage from "./pages/CallPage.jsx";
 import ChatPage from "./pages/ChatPage.jsx";
 import OnboardingPage from "./pages/OnboardingPage.jsx";
-
+ 
 import { Toaster } from "react-hot-toast";
 
 import PageLoader from "./components/PageLoader.jsx";
 import useAuthUser from "./hooks/useAuthUser.js";
 import Layout from "./components/Layout.jsx";
 import { useThemeStore } from "./store/useThemeStore.js";
+import PairCodingRoom from "./pages/PairCodingRoom";
+import ResourcesPage from "./pages/ResourcesPage";
+
+
 
 const App = () => {
   const { isLoading, authUser } = useAuthUser();
@@ -71,7 +74,7 @@ const App = () => {
             ) : (
               <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
             )
-          }
+          } 
         />
 
         <Route
@@ -101,10 +104,14 @@ const App = () => {
             )
           }
         />
+        <Route path="/pair-coding/:roomId" element={<PairCodingRoom />} />
+        <Route path="/resources" element={<ResourcesPage />} />
+
+
       </Routes>
 
       <Toaster />
     </div>
-  );
+  ); 
 };
-export default App;
+export default App;      

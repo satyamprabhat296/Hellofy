@@ -32,3 +32,13 @@
 .str-chat__message-input {
   border-top: 1px solid #ddd;
 }
+
+
+.remote-cursor-inline {
+  position: relative;
+}
+
+.remote-cursor-marker {
+  border-left-width: 2px !important;
+  margin-left: -1px;
+}
