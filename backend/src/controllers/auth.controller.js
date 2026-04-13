@@ -72,7 +72,7 @@ export async function login(req, res) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const user = await User.findOne({ email });
+const user = await User.findOne({ email }).select("+password");
     if (!user) return res.status(401).json({ message: "Invalid email or password" });
 
     const isPasswordCorrect = await user.matchPassword(password);
@@ -101,45 +101,84 @@ export function logout(req, res) {
   res.status(200).json({ success: true, message: "Logout successful" });
 }
 
+
+
 export async function onboard(req, res) {
   try {
     const userId = req.user._id;
 
-    const { fullName, bio, nativeLanguage, learningLanguage, location } = req.body;
+    const {
+      fullName,
+      bio,
+      profilePic,
+      location,
+      languagesToTeach,
+      languagesToLearn,
+      experienceLevel,
+      techStack,
+      github,
+      portfolio,
+      website
+    } = req.body;
 
-    if (!fullName || !bio || !nativeLanguage || !learningLanguage || !location) {
+    // 🧩 Validate required fields
+    if (
+      !fullName ||
+      !bio ||
+      !location ||
+      !languagesToTeach?.length ||
+      !languagesToLearn?.length
+    ) {
       return res.status(400).json({
-        message: "All fields are required",
+        message: "All required fields must be filled",
         missingFields: [
           !fullName && "fullName",
           !bio && "bio",
-          !nativeLanguage && "nativeLanguage",
-          !learningLanguage && "learningLanguage",
           !location && "location",
+          (!languagesToTeach || !languagesToTeach.length) && "languagesToTeach",
+          (!languagesToLearn || !languagesToLearn.length) && "languagesToLearn",
         ].filter(Boolean),
       });
     }
 
+    // ✅ Update user with new onboarding data
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
-        ...req.body,
+        fullName,
+        bio,
+        profilePic,
+        location,
+        languagesToTeach,
+        languagesToLearn,
+        experienceLevel: experienceLevel || "Beginner",
+        techStack: techStack || [],
+        github: github || "",
+        portfolio: portfolio || "",
+        website: website || "",
         isOnboarded: true,
       },
       { new: true }
     );
 
-    if (!updatedUser) return res.status(404).json({ message: "User not found" });
+    if (!updatedUser)
+      return res.status(404).json({ message: "User not found" });
 
+    // 🔁 Sync with Stream (optional, safe)
     try {
       await upsertStreamUser({
         id: updatedUser._id.toString(),
         name: updatedUser.fullName,
         image: updatedUser.profilePic || "",
       });
-      console.log(`Stream user updated after onboarding for ${updatedUser.fullName}`);
+      console.log(
+        `✅ Stream user updated after onboarding for ${updatedUser.fullName}`
+      );
     } catch (streamError) {
-      console.log("Error updating Stream user during onboarding:", streamError.message);
+      console.log(
+        "⚠️ Error updating Stream user during onboarding:",
+        streamError.message
+      );
     }
 
     res.status(200).json({ success: true, user: updatedUser });

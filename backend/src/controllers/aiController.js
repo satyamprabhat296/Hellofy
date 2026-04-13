@@ -8,6 +8,7 @@ export const getAIRecommendations = async (req, res) => {
       return res.status(400).json({ message: "Missing data for AI recommendations" });
     }
  
+
     const response = await axios.post(
       "https://api.groq.com/openai/v1/chat/completions",
       {
@@ -69,6 +70,7 @@ Respond **only** with a valid JSON array of 3 user IDs, e.g.:
     res.status(500).json({
       message: "AI Recommendation failed",
       error: error.response?.data || error.message,
+      
     });
   }
 };

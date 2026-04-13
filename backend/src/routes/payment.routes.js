@@ -1,6 +1,10 @@
 import express from "express";
 import crypto from "crypto";
+<<<<<<< HEAD
 import razorpay from "../lib/razorpay.js";
+=======
+import { getRazorpayInstance } from "../lib/razorpay.js";
+>>>>>>> 50aa8e3 (my local changes before pull)
 import { protectRoute } from "../middleware/auth.middleware.js";
 import User from "../models/User.js";
 
@@ -9,6 +13,11 @@ const router = express.Router();
 /* ---------------- CREATE ORDER ---------------- */
 router.post("/create-order", protectRoute, async (req, res) => {
   try {
+<<<<<<< HEAD
+=======
+    const razorpay = getRazorpayInstance(); // ✅ MOVE HERE
+
+>>>>>>> 50aa8e3 (my local changes before pull)
     const options = {
       amount: 19900, // ₹199
       currency: "INR",

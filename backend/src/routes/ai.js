@@ -5,27 +5,27 @@ import { protectRoute } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// Initialize Groq with your API key
+// Initialize Groq
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // ✅ AI Recommendation Route
 router.get("/recommend", protectRoute, async (req, res) => {
   try {
-    const userId = req.user._id; // from protectRoute middleware
+    const userId = req.user._id;
     const currentUser = await User.findById(userId);
 
     if (!currentUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Fetch all potential users (excluding self)
     const allUsers = await User.find({ _id: { $ne: userId } });
 
     if (!allUsers.length) {
-      return res.status(400).json({ message: "No other users available for recommendations" });
+      return res.status(400).json({
+        message: "No users available for recommendation",
+      });
     }
 
-    // Prepare user data for AI input
     const formattedUsers = allUsers.map((u) => ({
       id: u._id,
       name: u.fullName,
@@ -37,12 +37,15 @@ router.get("/recommend", protectRoute, async (req, res) => {
 
     const prompt = `
 You are an expert developer matchmaker AI.
-Given a current user's profile and a list of other developers, suggest 3–5 who would be the best match for pair programming.
 
-Focus on:
-- Matching "teaches" languages of one with "learns" of the other
-- Similar or complementary "techStack"
-- Similar interests in bio
+Suggest 3–5 best matches for pair programming.
+
+Rules:
+- Match "teaches" with "learns"
+- Match techStack similarity
+- Consider bio similarity
+
+Return ONLY JSON array of user IDs.
 
 Current user:
 ${JSON.stringify({
@@ -53,16 +56,12 @@ ${JSON.stringify({
   bio: currentUser.bio || "",
 }, null, 2)}
 
-Available users:
+Users:
 ${JSON.stringify(formattedUsers, null, 2)}
-
-Return ONLY a valid JSON array of user IDs (no explanation, no formatting).
-Example output: ["657f22f...", "658f33a...", "6590c44..."]
 `;
 
-    // ✅ Use supported Groq model
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile", // ✅ new supported model
+      model: "llama-3.3-70b-versatile",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
     });
@@ -70,19 +69,21 @@ Example output: ["657f22f...", "658f33a...", "6590c44..."]
     const content = completion.choices[0]?.message?.content?.trim();
 
     let recommendedIds = [];
+
     try {
       recommendedIds = JSON.parse(content);
     } catch (err) {
-      console.error("Groq returned invalid JSON:", content);
-      return res.status(500).json({ message: "AI response could not be parsed" });
+      console.error("Invalid JSON from AI:", content);
+      return res.status(500).json({
+        message: "AI response parsing failed",
+      });
     }
 
-    // Fetch recommended user details
     const recommendedUsers = await User.find({
       _id: { $in: recommendedIds },
     });
 
-    return res.json(recommendedUsers);
+    res.json(recommendedUsers);
   } catch (error) {
     console.error("AI Recommendation Error:", error);
     res.status(500).json({
