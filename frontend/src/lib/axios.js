@@ -1,7 +1,8 @@
 import axios from "axios";
 
-export const  axiosInstance= axios.create({
-    baseURL:"http://localhost:5000/api",
-    withCredentials:true, // send cookies with the request
-})
+const BASE_URL = import.meta.env.VITE_API_URL;
 
+export const axiosInstance = axios.create({
+  baseURL: `${BASE_URL}/api`,
+  withCredentials: true,
+});
