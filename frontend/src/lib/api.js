@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-=======
+
 // import { axiosInstance } from "./axios";
 
 // // 🧾 AUTH APIs
@@ -176,8 +175,7 @@ export const getStreamToken = async () => {
   return response.data;
 };
 
-<<<<<<< HEAD
-=======
+
 export const getResources = async () => {
   const res = await axiosInstance.get("/resources");
   return res.data;
