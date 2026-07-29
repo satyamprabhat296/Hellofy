@@ -18,7 +18,7 @@
     "crypto": "^1.0.1",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
-    "groq-sdk": "^0.34.0",
+    "groq-sdk": "^1.1.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.0",
     "openai": "^6.8.1",

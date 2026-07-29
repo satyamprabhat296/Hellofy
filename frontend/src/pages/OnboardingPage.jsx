@@ -290,12 +290,10 @@ const OnboardingPage = () => {
   };
 
   const handleRandomAvatar = () => {
-    const idx = Math.floor(Math.random() * 100) + 1;
-    const randomAvatar = `https://avatar.iran.liara.run/public/${idx}.png`;
-    setFormState({ ...formState, profilePic: randomAvatar });
-    toast.success("Random profile picture generated!");
-  };
-
+  const randomAvatar = `https://api.dicebear.com/9.x/adventurer/svg?seed=${Math.random()}`;
+  setFormState({ ...formState, profilePic: randomAvatar });
+  toast.success("Random profile picture generated!");
+};
   const handleMultiSelect = (name, e) => {
     const values = Array.from(e.target.selectedOptions, (opt) => opt.value);
     setFormState({ ...formState, [name]: values });

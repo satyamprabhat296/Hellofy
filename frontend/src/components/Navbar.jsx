@@ -55,9 +55,13 @@ const Navbar = () => {
             <div className="relative avatar">
               <div className="w-9 rounded-full">
                 <img
-                  src={authUser?.profilePic}
-                  alt="User Avatar"
-                />
+  src={authUser?.profilePic}
+  alt="User Avatar"
+  onError={(e) => {
+    e.currentTarget.onerror = null;
+    e.currentTarget.src = `https://api.dicebear.com/9.x/adventurer/svg?seed=${authUser?._id || authUser?.email || "user"}`;
+  }}
+/>
               </div>
 
               {authUser?.isPremium && (

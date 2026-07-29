@@ -762,11 +762,14 @@ const HomePage = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="avatar size-16 rounded-full">
-                            <img
-                              src={user.profilePic}
-                              alt={user.fullName}
-                              className="rounded-full"
-                            />
+                           <img
+  src={user.profilePic}
+  alt={user.fullName}
+  className="rounded-full" 
+  onError={(e) => {
+    e.currentTarget.src = `https://api.dicebear.com/9.x/adventurer/svg?seed=${user._id}`;
+  }}
+/>
                           </div>
                           <div>
                             <h3 className="font-semibold text-lg">

@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+dotenv.config();
 
 import express from "express";
 import cookieParser from "cookie-parser";
@@ -9,31 +10,52 @@ import axios from "axios";
 import authRoutes from "./routes/auth.route.js";
 import userRoutes from "./routes/user.route.js";
 import chatRoutes from "./routes/chat.route.js";
-
-import { connectDB } from "./lib/db.js";
-import { initPairProgrammingSocket } from "./socket/pairProgramming.js";
 import aiRoutes from "./routes/ai.js";
 import resourceRoutes from "./routes/resource.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import premiumRoutes from "./routes/premium.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 
-dotenv.config();
+import { connectDB } from "./lib/db.js";
+import { initPairProgrammingSocket } from "./socket/pairProgramming.js";
 
 const app = express();
 const server = createServer(app);
 
-// 🔧 Middleware
-app.use(express.json());
-app.use(cookieParser());
+// ================================
+// ✅ CORS CONFIG (FIXED)
+// ================================
+const allowedOrigins = [
+  "http://localhost:5173",                // local frontend
+  "https://hellofy-jet.vercel.app"       // deployed frontend
+];
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: function (origin, callback) {
+      // allow requests with no origin (Postman, mobile apps)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log("❌ Blocked by CORS:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
 
+// ================================
+// 🔧 Middleware
+// ================================
+app.use(express.json());
+app.use(cookieParser());
+
+// ================================
 // 🚏 API Routes
+// ================================
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
@@ -44,15 +66,18 @@ app.use("/api/premium", premiumRoutes);
 app.use("/api/admin", adminRoutes);
 
 // ================================
-// ✅ CODE EXECUTION ROUTE
+// ✅ HEALTH CHECK
 // ================================
-
 app.get("/", (req, res) => {
   res.json({
     message: "Hellofy API is running 🚀",
-    status: "success"
+    status: "success",
   });
 });
+
+// ================================
+// ✅ CODE EXECUTION ROUTE
+// ================================
 app.post("/api/run-code", async (req, res) => {
   try {
     const { language, files } = req.body;
@@ -85,21 +110,19 @@ app.post("/api/run-code", async (req, res) => {
 
     res.json({
       run: {
-        output:
-          "⚠️ Code execution failed (API blocked or unavailable).",
+        output: "⚠️ Code execution failed (API blocked or unavailable).",
       },
     });
   }
 });
-// ================================
 
-// 🔌 Initialize Socket.IO
+// ================================
+// 🔌 SOCKET.IO INIT
+// ================================
 initPairProgrammingSocket(server);
 
-const PORT = process.env.PORT || 5000;
-
 // ================================
-// ✅ FIX: DON'T BLOCK SERVER IF DB FAILS
+// 🗄️ DATABASE CONNECTION
 // ================================
 connectDB()
   .then(() => {
@@ -110,7 +133,11 @@ connectDB()
     console.log("⚠️ Server will still start without DB");
   });
 
-// ✅ ALWAYS START SERVER
+// ================================
+// 🚀 START SERVER
+// ================================
+const PORT = process.env.PORT || 5000;
+
 server.listen(PORT, () => {
   console.log(`🚀 Server + Socket.IO running on port ${PORT}`);
 });

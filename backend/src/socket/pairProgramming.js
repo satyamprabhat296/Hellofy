@@ -3,8 +3,12 @@ import { Server } from "socket.io";
 export const initPairProgrammingSocket = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: "http://localhost:5173",
+      origin: [
+        "http://localhost:5173",
+        "https://hellofy-jet.vercel.app"
+      ],
       methods: ["GET", "POST"],
+      credentials: true,
     },
   });
 
@@ -24,14 +28,16 @@ export const initPairProgrammingSocket = (server) => {
       socket.to(roomId).emit("languageUpdate", language);
     });
 
-    // 👇 NEW: handle real-time cursor positions
     socket.on("cursorChange", ({ roomId, cursor }) => {
-      socket.to(roomId).emit("cursorUpdate", { socketId: socket.id, cursor });
+      socket.to(roomId).emit("cursorUpdate", {
+        socketId: socket.id,
+        cursor,
+      });
     });
 
     socket.on("disconnect", () => {
       console.log("❌ User disconnected:", socket.id);
       io.emit("userDisconnected", socket.id);
     });
-  }); 
+  });
 };
