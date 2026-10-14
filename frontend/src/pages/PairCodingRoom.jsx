@@ -5,7 +5,7 @@ import { PlayIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
 
-const socket = io("http://localhost:5000");
+const socket = io("https://hellofy-backend-g5ln.onrender.com");
 
 const LANGUAGES = ["javascript", "python", "cpp", "java"];
 
@@ -107,30 +107,35 @@ const PairCodingRoom = ({ roomId = "test-room" }) => {
     });
   };
 
-  const runCode = async () => {
-    try {
-      const res = await axios.post(
-        "http://localhost:5000/api/run-code",
-        {
-          language,
-          version: "*",
-          files: [
-            {
-              name: "main.js",
-              content: code,
-            },
-          ],
-        }
-      );
+const runCode = async () => {
+  try {
+    const res = await axios.post(
+      "https://hellofy-backend-g5ln.onrender.com/api/run-code",
+      {
+        language,
+        version: "*",
+        files: [
+          {
+            name: "main.js",
+            content: code,
+          },
+        ],
+      }
+    );
 
-      setOutput(res.data.run.output);
-      toast.success("Code executed successfully!");
-    } catch (error) {
-      console.error(error);
-      setOutput("Error executing code");
-      toast.error("Failed to run code");
-    }
-  };
+    setOutput(res.data.run.output);
+    toast.success("Code executed successfully!");
+  } catch (error) {
+    console.error(
+      "Code execution error:",
+      error.response?.data || error.message
+    );
+    setOutput(
+      error.response?.data?.message || "Error executing code"
+    );
+    toast.error("Failed to run code");
+  }
+};
 
   return (
     <div className="min-h-screen bg-base-200 p-6">
