@@ -52,7 +52,7 @@ Respond **only** with a valid JSON array of 3 user IDs, e.g.:
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
           "Content-Type": "application/json",
         },
       }
