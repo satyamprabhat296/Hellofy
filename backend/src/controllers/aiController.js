@@ -12,7 +12,8 @@ export const getAIRecommendations = async (req, res) => {
     const response = await axios.post(
       "https://api.groq.com/openai/v1/chat/completions",
       {
-        model: "llama3-70b-8192", // Groq's top free model
+        
+model: "openai/gpt-oss-120b", // Groq's top free model
         messages: [
           {
             role: "system",
