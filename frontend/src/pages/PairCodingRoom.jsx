@@ -108,6 +108,15 @@ const PairCodingRoom = ({ roomId = "test-room" }) => {
   };
 
 const runCode = async () => {
+  setOutput("Running code...");
+  
+  const fileNames = {
+    javascript: "main.js",
+    python: "main.py",
+    cpp: "main.cpp",
+    java: "Main.java",
+  };
+
   try {
     const res = await axios.post(
       "https://hellofy-backend-g5ln.onrender.com/api/run-code",
@@ -116,26 +125,52 @@ const runCode = async () => {
         version: "*",
         files: [
           {
-            name: "main.js",
+            name: fileNames[language],
             content: code,
           },
         ],
+      },
+      {
+        timeout: 30000,
       }
     );
 
-    setOutput(res.data.run.output);
-    toast.success("Code executed successfully!");
+    const result = res.data?.run;
+    const compile = res.data?.compile;
+
+    const resultOutput =
+      result?.output ||
+      compile?.output ||
+      result?.stderr ||
+      compile?.stderr ||
+      "Code executed with no output.";
+
+    setOutput(resultOutput);
+
+    if (result?.code === 0) {
+      toast.success("Code executed successfully!");
+    } else {
+      toast.error("Code finished with errors.");
+    }
   } catch (error) {
-    console.error(
-      "Code execution error:",
-      error.response?.data || error.message
-    );
-    setOutput(
-      error.response?.data?.message || "Error executing code"
-    );
-    toast.error("Failed to run code");
+    console.error("Code execution error:", {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+
+    const message =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      (error.code === "ECONNABORTED"
+        ? "Code execution timed out."
+        : "Execution API unavailable. Check the backend logs.");
+
+    setOutput(message);
+    toast.error(message);
   }
 };
+
 
   return (
     <div className="min-h-screen bg-base-200 p-6">

@@ -78,10 +78,28 @@ app.get("/", (req, res) => {
 // ================================
 // ✅ CODE EXECUTION ROUTE
 // ================================
-app.post("/api/run-code", async (req, res) => {
-  try {
-    const { language, files } = req.body;
 
+const LANGUAGE_FILES = {
+  javascript: "main.js",
+  python: "main.py",
+  cpp: "main.cpp",
+  java: "Main.java",
+};
+
+app.post("/api/run-code", async (req, res) => {
+  const { language, files } = req.body ?? {};
+
+  if (
+    !LANGUAGE_FILES[language] ||
+    !Array.isArray(files) ||
+    typeof files[0]?.content !== "string"
+  ) {
+    return res.status(400).json({
+      message: "Invalid language or code.",
+    });
+  }
+
+  try {
     const response = await axios.post(
       "https://emkc.org/api/v2/piston/execute",
       {
@@ -89,32 +107,30 @@ app.post("/api/run-code", async (req, res) => {
         version: "*",
         files: [
           {
-            name: "main.js",
+            name: LANGUAGE_FILES[language],
             content: files[0].content,
           },
         ],
       },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
+      { timeout: 25000 }
     );
 
-    res.json(response.data);
+    return res.json(response.data);
   } catch (error) {
-    console.error(
-      "Code execution error:",
-      error.response?.data || error.message
-    );
+    console.error("Code execution error:", {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
 
-    res.json({
-      run: {
-        output: "⚠️ Code execution failed (API blocked or unavailable).",
-      },
+    return res.status(502).json({
+      message:
+        error.response?.data?.message ||
+        "The code execution service is unavailable.",
     });
   }
 });
+
 
 // ================================
 // 🔌 SOCKET.IO INIT
