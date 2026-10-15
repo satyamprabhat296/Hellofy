@@ -16,6 +16,7 @@ const FILE_NAMES = {
   java: "Main.java",
 };
 
+// Random color for each user's cursor
 const randomColor = () =>
   `hsl(${Math.floor(Math.random() * 360)}, 80%, 60%)`;
 
@@ -37,7 +38,6 @@ const PairCodingRoom = ({ roomId = "test-room" }) => {
 
   // Socket.IO collaboration
   useEffect(() => {
-    socket.connect();
     socket.emit("joinRoom", roomId);
 
     const handleCodeUpdate = (newCode) => {
@@ -67,7 +67,9 @@ const PairCodingRoom = ({ roomId = "test-room" }) => {
             after: {
               content: "",
               inlineClassName: "remote-cursor-marker",
-              style: `border-left: 2px solid ${cursor.color || "#ffffff"};`,
+              style: `border-left: 2px solid ${
+                cursor.color || "#ffffff"
+              };`,
             },
           },
         },
@@ -112,9 +114,10 @@ const PairCodingRoom = ({ roomId = "test-room" }) => {
     };
   }, [roomId]);
 
-  // Broadcast code changes
+  // Broadcast code changes to collaborators.
   const handleCodeChange = (value) => {
     const updatedCode = value ?? "";
+
     setCode(updatedCode);
     socket.emit("codeChange", {
       roomId,
@@ -122,7 +125,7 @@ const PairCodingRoom = ({ roomId = "test-room" }) => {
     });
   };
 
-  // Broadcast language changes
+  // Broadcast language changes.
   const handleLanguageChange = (event) => {
     const newLanguage = event.target.value;
 
@@ -133,7 +136,7 @@ const PairCodingRoom = ({ roomId = "test-room" }) => {
     });
   };
 
-  // Monaco editor initialization
+  // Monaco editor initialization.
   const handleEditorMount = (editor) => {
     editorRef.current = editor;
 
@@ -157,7 +160,7 @@ const PairCodingRoom = ({ roomId = "test-room" }) => {
     });
   };
 
-  // Execute code using the Hellofy backend and JDoodle
+  // Execute code using the Hellofy backend and JDoodle.
   const runCode = async () => {
     if (isRunning) return;
 
@@ -186,7 +189,8 @@ const PairCodingRoom = ({ roomId = "test-room" }) => {
 
       if (!result) {
         const message =
-          response.data?.message || "Unexpected execution response.";
+          response.data?.message ||
+          "Unexpected response from the execution service.";
 
         setOutput(message);
         toast.error(message);
@@ -196,19 +200,26 @@ const PairCodingRoom = ({ roomId = "test-room" }) => {
       const resultOutput = result.output ?? "";
       const statusCode = result.statusCode;
 
+      // Show program output, including compiler/runtime error text.
       setOutput(resultOutput || "Code executed with no output.");
 
-      // JDoodle normally reports zero for a successful program exit.
-      if (statusCode === 0 || statusCode === "0") {
-        toast.success("Code executed successfully!");
-      } else if (statusCode !== undefined && statusCode !== null) {
+      // Normalize numeric and string exit codes.
+      const hasExitCode =
+        statusCode !== undefined &&
+        statusCode !== null &&
+        statusCode !== "";
+
+      const exitCode = hasExitCode ? Number(statusCode) : null;
+
+      // A reported nonzero exit code indicates failure.
+      if (hasExitCode && (!Number.isFinite(exitCode) || exitCode !== 0)) {
         toast.error("Code execution failed. Check the output.");
-      } else if (resultOutput) {
-        // If the provider doesn't return an exit status, avoid
-        // falsely reporting a failure just because it is missing.
-        toast.success("Execution completed. Check the output.");
+      } else if (hasExitCode && exitCode === 0) {
+        toast.success("Code executed successfully!");
       } else {
-        toast.success("Execution completed.");
+        // Do not incorrectly show a failure just because JDoodle
+        // did not return an exit code in the response.
+        toast.success("Execution completed. Check the output.");
       }
     } catch (error) {
       console.error("Code execution error:", {

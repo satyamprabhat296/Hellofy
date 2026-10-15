@@ -1,7 +1,8 @@
+
 import dotenv from "dotenv";
 dotenv.config();
 
-import express from "express";
+import express from "express";  
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import { createServer } from "http";
@@ -23,38 +24,36 @@ const app = express();
 const server = createServer(app);
 
 // ================================
-// ✅ CORS CONFIG (FIXED)
+// CORS CONFIGURATION
 // ================================
 const allowedOrigins = [
-  "http://localhost:5173",                // local frontend
-  "https://hellofy-jet.vercel.app"       // deployed frontend
+  "http://localhost:5173",
+  "https://hellofy-jet.vercel.app",
 ];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // allow requests with no origin (Postman, mobile apps)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.log("❌ Blocked by CORS:", origin);
-        callback(new Error("Not allowed by CORS"));
+    origin: (origin, callback) => {
+      // Allow requests without an Origin header, such as server-to-server requests.
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
       }
+
+      console.log("Blocked by CORS:", origin);
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
   })
 );
 
 // ================================
-// 🔧 Middleware
+// MIDDLEWARE
 // ================================
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
 // ================================
-// 🚏 API Routes
+// API ROUTES
 // ================================
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -66,94 +65,147 @@ app.use("/api/premium", premiumRoutes);
 app.use("/api/admin", adminRoutes);
 
 // ================================
-// ✅ HEALTH CHECK
+// HEALTH CHECK
 // ================================
 app.get("/", (req, res) => {
   res.json({
-    message: "Hellofy API is running 🚀",
+    message: "Hellofy API is running",
     status: "success",
   });
 });
 
 // ================================
-// ✅ CODE EXECUTION ROUTE
+// CODE EXECUTION - JDOODLE
 // ================================
 
-const LANGUAGE_FILES = {
-  javascript: "main.js",
-  python: "main.py",
-  cpp: "main.cpp",
-  java: "Main.java",
+// Verify the versionIndex values against the runtimes available
+// in your JDoodle account before relying on this mapping.
+const JDOODLE_LANGUAGES = {
+  javascript: { language: "nodejs", versionIndex: "4" },
+  python: { language: "python3", versionIndex: "4" },
+  cpp: { language: "cpp17", versionIndex: "1" },
+  java: { language: "java", versionIndex: "4" },
 };
 
 app.post("/api/run-code", async (req, res) => {
-  const { language, files } = req.body ?? {};
+  const { language, files, stdin = "" } = req.body ?? {};
 
+  const script = files?.[0]?.content;
+
+  // Validate the requested language and source code.
   if (
-    !LANGUAGE_FILES[language] ||
-    !Array.isArray(files) ||
-    typeof files[0]?.content !== "string"
+    !JDOODLE_LANGUAGES[language] ||
+    typeof script !== "string" ||
+    typeof stdin !== "string"
   ) {
     return res.status(400).json({
-      message: "Invalid language or code.",
+      message: "Invalid language, code, or input.",
+    });
+  }
+
+  // Keep JDoodle credentials on the backend only.
+  const clientId = process.env.JDOODLE_CLIENT_ID;
+  const clientSecret = process.env.JDOODLE_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    console.error("JDoodle credentials are missing.");
+
+    return res.status(500).json({
+      message: "Code execution is not configured on the server.",
     });
   }
 
   try {
+    const selected = JDOODLE_LANGUAGES[language];
+
     const response = await axios.post(
-      "https://emkc.org/api/v2/piston/execute",
+      "https://api.jdoodle.com/v1/execute",
       {
-        language,
-        version: "*",
-        files: [
-          {
-            name: LANGUAGE_FILES[language],
-            content: files[0].content,
-          },
-        ],
+        clientId,
+        clientSecret,
+        script,
+        stdin,
+        language: selected.language,
+        versionIndex: selected.versionIndex,
       },
-      { timeout: 25000 }
+      {
+        timeout: 30000,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
     );
 
-    return res.json(response.data);
+    const result = response.data;
+
+    // JDoodle may return execution errors in its response body.
+    if (result.error) {
+      console.error("JDoodle returned an error:", result.error);
+
+      return res.status(502).json({
+        message:
+          typeof result.error === "string"
+            ? result.error
+            : "JDoodle could not execute the code.",
+      });
+    }
+
+    return res.status(200).json({
+      run: {
+        output: result.output ?? "",
+        statusCode: result.statusCode,
+        memory: result.memory,
+        cpuTime: result.cpuTime,
+      },
+    });
   } catch (error) {
-    console.error("Code execution error:", {
+    console.error("JDoodle execution error:", {
       status: error.response?.status,
       data: error.response?.data,
       message: error.message,
     });
 
+    if (error.code === "ECONNABORTED") {
+      return res.status(504).json({
+        message: "Code execution timed out. Please try again.",
+      });
+    }
+
     return res.status(502).json({
       message:
+        error.response?.data?.error ||
         error.response?.data?.message ||
-        "The code execution service is unavailable.",
+        "Code execution service failed. Check the backend logs.",
     });
   }
 });
 
-
 // ================================
-// 🔌 SOCKET.IO INIT
+// SOCKET.IO INITIALIZATION
 // ================================
 initPairProgrammingSocket(server);
 
 // ================================
-// 🗄️ DATABASE CONNECTION
+// DATABASE CONNECTION
 // ================================
 connectDB()
   .then(() => {
-    console.log("✅ MongoDB connected");
+    console.log("MongoDB connected");
   })
   .catch((err) => {
-    console.error("❌ MongoDB failed:", err.message);
-    console.log("⚠️ Server will still start without DB");
+    console.error("MongoDB connection failed:", err.message);
+    console.log("Server will still start without the database.");
   });
 
 // ================================
-// 🚀 START SERVER
+// START SERVER
 // ================================
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
+
   console.log(`🚀 Server + Socket.IO running on port ${PORT}`);
+
+  console.log(`Server + Socket.IO running on port ${PORT}`);
+ 
 });
