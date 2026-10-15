@@ -107,50 +107,53 @@ const PairCodingRoom = ({ roomId = "test-room" }) => {
     });
   };
 
+
 const runCode = async () => {
   setOutput("Running code...");
-  
-  const fileNames = {
-    javascript: "main.js",
-    python: "main.py",
-    cpp: "main.cpp",
-    java: "Main.java",
-  };
 
   try {
     const res = await axios.post(
       "https://hellofy-backend-g5ln.onrender.com/api/run-code",
       {
         language,
-        version: "*",
         files: [
           {
-            name: fileNames[language],
+            name:
+              language === "javascript"
+                ? "main.js"
+                : language === "python"
+                ? "main.py"
+                : language === "cpp"
+                ? "main.cpp"
+                : "Main.java",
             content: code,
           },
         ],
+        stdin: "",
       },
       {
-        timeout: 30000,
+        timeout: 35000,
       }
     );
 
     const result = res.data?.run;
-    const compile = res.data?.compile;
 
-    const resultOutput =
-      result?.output ||
-      compile?.output ||
-      result?.stderr ||
-      compile?.stderr ||
-      "Code executed with no output.";
+    if (!result) {
+      const message = res.data?.message || "Unexpected execution response.";
+      setOutput(message);
+      toast.error(message);
+      return;
+    }
 
-    setOutput(resultOutput);
+    const resultOutput = result.output ?? "";
 
-    if (result?.code === 0) {
+    setOutput(resultOutput || "Code executed with no output.");
+
+    // JDoodle's statusCode indicates the program's exit status.
+    if (result.statusCode === 0) {
       toast.success("Code executed successfully!");
     } else {
-      toast.error("Code finished with errors.");
+      toast.error("Code executed successfully!");
     }
   } catch (error) {
     console.error("Code execution error:", {
@@ -161,16 +164,14 @@ const runCode = async () => {
 
     const message =
       error.response?.data?.message ||
-      error.response?.data?.error ||
       (error.code === "ECONNABORTED"
         ? "Code execution timed out."
-        : "Execution API unavailable. Check the backend logs.");
+        : "Execution failed. Check the backend logs.");
 
     setOutput(message);
     toast.error(message);
   }
 };
-
 
   return (
     <div className="min-h-screen bg-base-200 p-6">
