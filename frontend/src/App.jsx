@@ -1,5 +1,4 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import HomePage from "./pages/HomePage.jsx";
 import SignUpPage from "./pages/SignUpPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import NotificationsPage from "./pages/NotificationsPage.jsx";
@@ -9,6 +8,7 @@ import OnboardingPage from "./pages/OnboardingPage.jsx";
 import FriendsPage from "./pages/FriendsPage.jsx";
 import PairCodingRoom from "./pages/PairCodingRoom";
 import ResourcesPage from "./pages/ResourcesPage";
+import HomePage from "./pages/HomePage.jsx";
   
 import { Toaster } from "react-hot-toast";
 
@@ -23,6 +23,7 @@ const App = () => {
 
   const isAuthenticated = Boolean(authUser);
   const isOnboarded = authUser?.isOnboarded;
+
 
   if (isLoading) {
     return <PageLoader />;
@@ -89,6 +90,7 @@ const App = () => {
             ) : (
               <Navigate
                 to={!isAuthenticated ? "/login" : "/onboarding"}
+
                 replace
               />
             )
@@ -174,7 +176,9 @@ const App = () => {
       </Routes>
 
       <Toaster />
+
     </div>
+
   );
 };
 

@@ -277,7 +277,7 @@ const OnboardingPage = () => {
       queryClient.invalidateQueries({ queryKey: ["authUser"] });
 
       // ✅ Redirect after success
-      setTimeout(() => navigate("/home"), 1000);
+      setTimeout(() => navigate("/"), 1000);
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || "Something went wrong");
