@@ -9,7 +9,7 @@ import { createServer } from "http";
 import axios from "axios";
 
 import authRoutes from "./routes/auth.route.js";
-import userRoutes from "./routes/user.route.js";
+import userRoutes from "./routes/user.route.js";   
 import chatRoutes from "./routes/chat.route.js";
 import aiRoutes from "./routes/ai.js";
 import resourceRoutes from "./routes/resource.js";
@@ -50,7 +50,7 @@ app.use(
 // MIDDLEWARE
 // ================================
 app.use(express.json({ limit: "1mb" }));
-app.use(cookieParser());
+app.use(cookieParser()); 
 
 // ================================
 // API ROUTES
@@ -209,3 +209,5 @@ server.listen(PORT, () => {
   console.log(`Server + Socket.IO running on port ${PORT}`);
  
 });
+
+

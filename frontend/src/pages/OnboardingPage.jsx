@@ -290,8 +290,17 @@ const OnboardingPage = () => {
   };
 
   const handleRandomAvatar = () => {
-  const randomAvatar = `https://api.dicebear.com/9.x/adventurer/svg?seed=${Math.random()}`;
-  setFormState({ ...formState, profilePic: randomAvatar });
+  const seed = `${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 9)}`;
+
+  const randomAvatar = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(seed)}`;
+
+  setFormState((prev) => ({
+    ...prev,
+    profilePic: randomAvatar,
+  }));
+
   toast.success("Random profile picture generated!");
 };
   const handleMultiSelect = (name, e) => {
@@ -312,11 +321,15 @@ const OnboardingPage = () => {
             <div className="flex flex-col items-center justify-center space-y-4">
               <div className="size-32 rounded-full bg-base-300 overflow-hidden">
                 {formState.profilePic ? (
-                  <img
-                    src={formState.profilePic}
-                    alt="Profile Preview"
-                    className="w-full h-full object-cover"
-                  />
+                <img
+  src={formState.profilePic}
+  alt="Profile Preview"
+  className="w-full h-full object-cover"
+  onError={(e) => {
+    e.currentTarget.onerror = null;
+    e.currentTarget.src = "/default-avatar.svg";
+  }}
+/>
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <CameraIcon className="size-12 text-base-content opacity-40" />
