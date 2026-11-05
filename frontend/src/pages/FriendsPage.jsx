@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { axiosInstance } from "../lib/axios";
 import FriendCard from "../components/FriendCard";
@@ -23,7 +22,7 @@ const FriendsPage = () => {
       } catch (err) {
         console.error("Failed to fetch friends:", err);
         setError(
-          err.response?.data?.message ||
+          err.response?.data?.message || 
             "Unable to load friends. Please try again."
         );
       } finally {
