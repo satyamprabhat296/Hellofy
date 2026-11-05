@@ -211,15 +211,10 @@ const PairCodingRoom = ({ roomId = "test-room" }) => {
 
       const exitCode = hasExitCode ? Number(statusCode) : null;
 
-      // A reported nonzero exit code indicates failure.
-      if (hasExitCode && (!Number.isFinite(exitCode) || exitCode !== 0)) {
-        toast.error("Code execution failed. Check the output.");
-      } else if (hasExitCode && exitCode === 0) {
+      if (hasExitCode && Number.isFinite(exitCode) && exitCode === 0) {
         toast.success("Code executed successfully!");
       } else {
-        // Do not incorrectly show a failure just because JDoodle
-        // did not return an exit code in the response.
-        toast.success("Execution completed. Check the output.");
+        toast("Execution completed. Check the output.");
       }
     } catch (error) {
       console.error("Code execution error:", {
